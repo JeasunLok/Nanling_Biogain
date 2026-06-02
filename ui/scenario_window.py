@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import rasterio
 from PySide6.QtCore import QThread
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -29,7 +30,7 @@ from ui.background_tasks import ScenarioWorker
 from ui.raster_viewer import RasterViewer
 from ui.translations import translate
 from utils.constants import DISPLAY_UNITS, PREVIEW_STYLE, RESPONSE_VARIABLES
-from utils.paths import ensure_output_dir
+from utils.paths import ensure_output_dir, resource_path
 
 
 class ScenarioWindow(QDialog):
@@ -51,6 +52,9 @@ class ScenarioWindow(QDialog):
         super().__init__(parent)
         self.resize(1200, 820)
         self.setModal(False)
+        icon_path = resource_path("assets", "Nanling_Biogain.ico")
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
         self._language = language
         self._trained_models = trained_models
         self._model_results = model_results
@@ -69,6 +73,11 @@ class ScenarioWindow(QDialog):
         self._response_selector.addItems(RESPONSE_VARIABLES)
         self._feature_selector = QComboBox()
         self._preview_selector = QComboBox()
+        self._delta_spin = QDoubleSpinBox()
+        self._delta_spin.setDecimals(4)
+        self._delta_spin.setRange(-1000000.0, 1000000.0)
+        self._delta_spin.setSingleStep(0.1)
+        self._delta_spin.setValue(1.0)
         self._run_button = QPushButton()
         self._cancel_button = QPushButton()
         self._export_report_button = QPushButton()
@@ -108,9 +117,11 @@ class ScenarioWindow(QDialog):
         form_layout = QFormLayout(form_panel)
         self._response_label = QLabel()
         self._feature_label = QLabel()
+        self._delta_label = QLabel()
         self._preview_layer_label = QLabel()
         form_layout.addRow(self._response_label, self._response_selector)
         form_layout.addRow(self._feature_label, self._feature_selector)
+        form_layout.addRow(self._delta_label, self._delta_spin)
         form_layout.addRow(self._preview_layer_label, self._preview_selector)
 
         button_row = QHBoxLayout()
@@ -193,6 +204,7 @@ class ScenarioWindow(QDialog):
         self._report_box.setTitle(self._tr("report_ready"))
         self._response_label.setText(self._tr("response_variable"))
         self._feature_label.setText(self._tr("scenario_feature"))
+        self._delta_label.setText(self._tr("scenario_delta"))
         self._preview_layer_label.setText(self._tr("preview_layer"))
         self._run_button.setText(self._tr("run_assessment"))
         self._cancel_button.setText(self._tr("cancel"))
@@ -211,6 +223,9 @@ class ScenarioWindow(QDialog):
     def _current_feature(self) -> str:
         feature_name = self._feature_selector.currentData()
         return feature_name if feature_name is not None else "tree_diversity"
+
+    def _current_delta(self) -> float:
+        return float(self._delta_spin.value())
 
     def _seed_predictor_inputs(self) -> None:
         response_name = self._current_response()
@@ -289,7 +304,7 @@ class ScenarioWindow(QDialog):
             feature_names=self._model_results[response_name].feature_names,
             nodata_map=nodata_map,
             adjusted_feature=self._current_feature(),
-            delta=1.0,
+            delta=self._current_delta(),
             response_name=response_name,
             reference_profile=self._registry.export_reference_profile(),
             output_dir=ensure_output_dir(),
@@ -315,7 +330,13 @@ class ScenarioWindow(QDialog):
         self._progress_label.setText("{0}% | {1}".format(value, message))
 
     def _handle_finished(self, payload: dict) -> None:
-        self._scenario_results[self._scenario_result_key(payload["response_name"], payload["scenario_feature"])] = payload
+        self._scenario_results[
+            self._scenario_result_key(
+                payload["response_name"],
+                payload["scenario_feature"],
+                payload["delta"],
+            )
+        ] = payload
         self._summary_box.setPlainText(self._build_report_text(payload))
         percent_index = self._preview_selector.findData("percent_gain")
         if percent_index >= 0:
@@ -379,7 +400,12 @@ class ScenarioWindow(QDialog):
         if preview_mode == "absolute_gain":
             self._viewer.show_single_band(
                 scenario_result["delta_raster"],
-                self._gain_preview_title(response_name, scenario_result["scenario_feature"], "absolute"),
+                self._gain_preview_title(
+                    response_name,
+                    scenario_result["scenario_feature"],
+                    "absolute",
+                    scenario_result["delta"],
+                ),
                 nodata=np.nan,
                 transform=self._registry.records[0].transform,
                 overlay_geometries=self._nanling_geometry,
@@ -391,7 +417,12 @@ class ScenarioWindow(QDialog):
         elif preview_mode == "percent_gain":
             self._viewer.show_single_band(
                 scenario_result["percent_raster"],
-                self._gain_preview_title(response_name, scenario_result["scenario_feature"], "percent"),
+                self._gain_preview_title(
+                    response_name,
+                    scenario_result["scenario_feature"],
+                    "percent",
+                    scenario_result["delta"],
+                ),
                 nodata=np.nan,
                 transform=self._registry.records[0].transform,
                 overlay_geometries=self._nanling_geometry,
@@ -445,7 +476,8 @@ class ScenarioWindow(QDialog):
         baseline_prediction = float(model.predict(prediction_table)[0])
         scenario_table = prediction_table.copy()
         feature_name = self._current_feature()
-        scenario_table.loc[:, feature_name] = scenario_table.loc[:, feature_name] + 1.0
+        delta = self._current_delta()
+        scenario_table.loc[:, feature_name] = scenario_table.loc[:, feature_name] + delta
         scenario_prediction = float(model.predict(scenario_table)[0])
         gain = scenario_prediction - baseline_prediction
         percent_gain = 0.0
@@ -464,6 +496,7 @@ class ScenarioWindow(QDialog):
                     abs(gain),
                     response_unit,
                     abs(percent_gain),
+                    self._format_delta(delta),
                 )
             )
         )
@@ -480,7 +513,7 @@ class ScenarioWindow(QDialog):
         lines = [
             self._tr("scenario_window_title"),
             self._tr("response_label_line").format(response_label),
-            self._tr("scenario_feature_line").format(feature_label),
+            self._tr("scenario_feature_line").format(feature_label, self._format_delta_change_text(payload["delta"])),
             "R2: {0:.4f}".format(result.r2),
             "RMSE: {0:.4f}".format(result.rmse),
             "MAE: {0:.4f}".format(result.mae),
@@ -489,11 +522,13 @@ class ScenarioWindow(QDialog):
                 response_label,
                 abs(mean_gain),
                 self._response_unit_suffix(response_name),
+                self._format_delta_change_text(payload["delta"]),
             ),
             self._tr(percent_key).format(
                 feature_label,
                 response_label,
                 abs(mean_percent_gain),
+                self._format_delta_change_text(payload["delta"]),
             ),
         ]
         if response_name == "GPP":
@@ -502,7 +537,13 @@ class ScenarioWindow(QDialog):
                 payload.get("valid_mask"),
             )
             total_key = "gpp_total_sentence_positive" if total_tonnes >= 0 else "gpp_total_sentence_negative"
-            lines.append(self._tr(total_key).format(feature_label, abs(total_tonnes)))
+            lines.append(
+                self._tr(total_key).format(
+                    feature_label,
+                    abs(total_tonnes),
+                    self._format_delta_change_text(payload["delta"]),
+                )
+            )
             lines.extend(self._build_carbon_sink_lines(total_tonnes))
         else:
             lines.append(
@@ -620,7 +661,8 @@ class ScenarioWindow(QDialog):
         percent_increase = 0.0
         if self.NANLING_2025_CARBON_SINK_TONNES > 0:
             percent_increase = sink_tonnes / self.NANLING_2025_CARBON_SINK_TONNES * 100.0
-        return [self._tr("carbon_sink_line").format(abs(sink_tonnes), abs(percent_increase))]
+        key = "carbon_sink_line_positive" if sink_tonnes >= 0 else "carbon_sink_line_negative"
+        return [self._tr(key).format(abs(sink_tonnes), abs(percent_increase))]
 
     def _biodiversity_valid_mask(self, shape: tuple[int, int]) -> np.ndarray:
         arrays = self._registry.load_arrays()
@@ -640,23 +682,47 @@ class ScenarioWindow(QDialog):
         self,
         response_name: Optional[str] = None,
         feature_name: Optional[str] = None,
-    ) -> tuple[str, str]:
+        delta: Optional[float] = None,
+    ) -> tuple[str, str, str]:
         return (
             response_name or self._current_response(),
             feature_name or self._current_feature(),
+            self._format_delta(delta if delta is not None else self._current_delta()),
         )
 
-    def _gain_preview_title(self, response_name: str, feature_name: str, mode: str) -> str:
+    def _gain_preview_title(
+        self,
+        response_name: str,
+        feature_name: str,
+        mode: str,
+        delta: float,
+    ) -> str:
         feature_label = self._feature_label_text(feature_name)
         response_label = self._tr("var_{0}".format(response_name))
+        delta_label = self._format_delta(delta)
         if mode == "absolute":
-            return "{0} -> {1} | {2}".format(
+            return "{0} +{1} -> {2} | {3}".format(
                 feature_label,
+                delta_label,
                 response_label,
                 self._tr("absolute_gain_preview"),
             )
-        return "{0} -> {1} | {2}".format(
+        return "{0} +{1} -> {2} | {3}".format(
             feature_label,
+            delta_label,
             response_label,
             self._tr("percent_gain_preview"),
         )
+
+    def _format_delta(self, value: float) -> str:
+        text = "{0:.4f}".format(float(value)).rstrip("0").rstrip(".")
+        return text if text else "0"
+
+    def _format_delta_change_text(self, value: float) -> str:
+        magnitude = self._format_delta(abs(float(value)))
+        if self._language == "zh":
+            verb = "增加" if value >= 0 else "减少"
+            return "{0}{1}个单位".format(verb, magnitude)
+        verb = "increase by " if value >= 0 else "decrease by "
+        unit = " unit" if magnitude == "1" else " units"
+        return "{0}{1}{2}".format(verb, magnitude, unit)

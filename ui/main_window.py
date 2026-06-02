@@ -6,7 +6,7 @@ from typing import Optional
 import pandas as pd
 import shapefile
 from PySide6.QtCore import QThread
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -44,7 +44,7 @@ from utils.constants import (
     RESPONSE_VARIABLES,
 )
 from utils.output_io import export_sample_table_summary
-from utils.paths import clear_output_dir
+from utils.paths import clear_output_dir, resource_path
 
 
 class MainWindow(QMainWindow):
@@ -55,6 +55,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.resize(1320, 820)
         self._language = "zh"
+        icon_path = resource_path("assets", "Nanling_Biogain.ico")
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
 
         self.registry = RasterRegistry()
         self._sample_tables: dict[str, pd.DataFrame] = {}

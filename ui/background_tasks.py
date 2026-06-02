@@ -112,6 +112,7 @@ class ScenarioWorker(QObject):
 
     def run(self) -> None:
         try:
+            delta_label = _format_delta_for_filename(self._delta)
             delta_raster, percent_raster, valid_mask = run_plus_one_scenario(
                 model=self._model,
                 arrays=self._arrays,
@@ -128,18 +129,20 @@ class ScenarioWorker(QObject):
             self.progress.emit(92, "Exporting gain rasters")
             absolute_output_path = export_prediction_raster(
                 self._output_dir
-                / "prediction_{0}_{1}_plus_1_absolute.tif".format(
+                / "prediction_{0}_{1}_plus_{2}_absolute.tif".format(
                     self._response_name,
                     self._adjusted_feature,
+                    delta_label,
                 ),
                 self._reference_profile,
                 delta_raster,
             )
             percent_output_path = export_prediction_raster(
                 self._output_dir
-                / "prediction_{0}_{1}_plus_1_percent.tif".format(
+                / "prediction_{0}_{1}_plus_{2}_percent.tif".format(
                     self._response_name,
                     self._adjusted_feature,
+                    delta_label,
                 ),
                 self._reference_profile,
                 percent_raster,
@@ -168,6 +171,7 @@ class ScenarioWorker(QObject):
                     "mean_gain": mean_gain,
                     "mean_percent_gain": mean_percent_gain,
                     "scenario_feature": self._adjusted_feature,
+                    "delta": self._delta,
                     "response_name": self._response_name,
                 }
             )
@@ -178,3 +182,9 @@ class ScenarioWorker(QObject):
 
     def _emit_progress(self, value: int, message: str) -> None:
         self.progress.emit(value, message)
+
+
+def _format_delta_for_filename(value: float) -> str:
+    text = "{0:.4f}".format(float(value)).rstrip("0").rstrip(".")
+    text = text.replace("-", "neg_").replace(".", "_")
+    return text if text else "0"
