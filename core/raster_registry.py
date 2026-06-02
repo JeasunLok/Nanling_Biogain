@@ -6,6 +6,7 @@ from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 import rasterio
+from rasterio.crs import CRS
 from rasterio.features import geometry_mask
 from rasterio.transform import Affine
 from rasterio.warp import Resampling, reproject
@@ -157,7 +158,7 @@ class RasterRegistry:
         bounds: Tuple[float, float, float, float],
     ) -> tuple[np.ndarray, Affine, Optional[float]]:
         record = self.get_record(variable_name)
-        if record.crs not in {"EPSG:4326", "OGC:CRS84"}:
+        if not is_wgs84_crs(record.crs):
             raise ValueError(
                 "Preview currently requires WGS84 rasters. "
                 "Raster CRS was {0}.".format(record.crs)
@@ -315,3 +316,25 @@ def raster_bounds_from_record(record: RasterRecord) -> tuple[float, float, float
         max(left, right),
         max(bottom, top),
     )
+
+
+def is_wgs84_crs(crs_value: object) -> bool:
+    try:
+        crs = CRS.from_user_input(crs_value)
+    except Exception:
+        return False
+
+    authority = crs.to_authority()
+    if authority in {("EPSG", "4326"), ("OGC", "CRS84")}:
+        return True
+
+    epsg = crs.to_epsg()
+    if epsg == 4326:
+        return True
+
+    if crs.is_geographic:
+        wkt_text = crs.to_wkt().upper()
+        if "WGS 84" in wkt_text or "WGS_1984" in wkt_text:
+            return True
+
+    return False
