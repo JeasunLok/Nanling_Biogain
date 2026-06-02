@@ -1,0 +1,16 @@
+name: nanling-biogain
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - rasterio
+  - pyside6
+  - openpyxl
+  - python-docx
+  - pyinstaller
+  - pip:
+      - xgboost
+      - shap
