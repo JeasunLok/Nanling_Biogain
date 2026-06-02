@@ -1,75 +1,63 @@
 # Nanling Biodiversity Vegetation Function Gain Assessment System
 
-## 中文简介
+## 中文
 
-`Nanling_Biogain` 是一个面向南岭区域的 Windows 桌面研究软件，用于评估生物多样性提升对植被功能的增益，而不只是做一般的预测建模。
+### 项目简介
 
-当前重点回答 3 类问题：
-- 树种多样性 `tree_diversity` 每增加 1 个单位，`GPP`、`LAI`、`VOD` 会增加多少
-- 结构多样性 `structure_diversity` 每增加 1 个单位，`GPP`、`LAI`、`VOD` 会增加多少
-- 在控制气候和地形变量后，生物多样性变量是否仍然具有独立贡献
+`Nanling_Biogain` 是一个面向南岭区域的生物多样性增益评估桌面软件。项目以 Python 和 PySide6 为基础，围绕生物多样性对植被功能的影响开展像元级建模、情景分析与结果展示。
 
-当前版本已经完成一条可用主链：
-- 手动加载或加载多年平均预处理数据
-- 栅格对齐检查与必要重采样
+本系统关注以下核心问题：
+- 树种多样性 `tree_diversity` 增加时，`GPP`、`LAI`、`VOD` 的变化幅度
+- 结构多样性 `structure_diversity` 增加时，`GPP`、`LAI`、`VOD` 的变化幅度
+- 在控制气候与地形变量后，生物多样性变量是否仍具有独立贡献
+
+### 当前功能
+
+当前版本已实现以下主要功能：
+- 多源栅格手动加载与多年平均数据加载
+- 栅格对齐检查与基于响应变量网格的必要重采样
+- 南岭区域裁剪预览与矢量边界叠加
 - 像元级样本表构建
-- `RandomForestRegressor` 基线训练
-- 生物多样性 `+1` 增益评估
-- 绝对增益和百分比增益预览
+- `RandomForestRegressor` 基线模型训练
+- 生物多样性 `+1` 情景增益评估
+- 绝对增益与百分比增益可视化
 - 中英文界面切换
 
-## English Overview
+### 技术栈
 
-`Nanling_Biogain` is a Windows-first desktop research application for the Nanling region. It focuses on biodiversity-driven gain in vegetation functions rather than generic prediction alone.
+- Python
+- PySide6
+- rasterio
+- numpy
+- pandas
+- scikit-learn
+- matplotlib
+- openpyxl
+- python-docx
 
-The current scientific questions are:
-- How much do `GPP`, `LAI`, and `VOD` increase when `tree_diversity` increases by one unit
-- How much do `GPP`, `LAI`, and `VOD` increase when `structure_diversity` increases by one unit
-- Whether biodiversity variables still contribute after climate and terrain are controlled
+### 项目结构
 
-The current version already supports a usable end-to-end workflow:
-- Manual raster loading or prepared mean-dataset loading
-- Grid alignment checks and required resampling
-- Pixel-level sample-table building
-- `RandomForestRegressor` baseline training
-- Biodiversity `+1` gain assessment
-- Absolute and percent gain previews
-- Chinese / English UI switching
+- `main.py`：桌面应用入口
+- `ui/`：界面、交互、多语言与后台任务
+- `core/`：栅格处理、样本表构建、建模与情景分析
+- `utils/`：常量、路径、导出与通用辅助函数
+- `docs/`：范围定义、技术路线与架构说明
 
-## 当前目录 / Repository Structure
+### 运行方式
 
-- `main.py`: 桌面应用入口 / desktop entry point
-- `ui/`: 界面、后台任务和多语言文本 / UI, background tasks, translations
-- `core/`: 栅格处理、建模、情景评估 / raster processing, modeling, scenarios
-- `utils/`: 常量、路径、导出辅助工具 / constants, paths, export helpers
-- `docs/`: 需求、技术路线、架构说明 / scope, stack, architecture notes
+当前支持两种运行方式：
 
-## 运行环境 / Environment
+1. 面向正式使用的 Windows 安装包  
+安装完成后，用户可直接通过桌面或开始菜单启动软件，无需手动配置 Python 或 Conda 环境。
 
-推荐环境：
-- Python `3.11` 作为目标版本
-- 当前开发与测试实际主要在 `conda` 环境 `da` 中完成
+2. 面向开发与科研复现的 Conda 环境  
+如需在本地继续开发、调试或复现实验流程，可使用环境配置文件创建运行环境。
 
-核心依赖：
-- `PySide6`
-- `rasterio`
-- `numpy`
-- `pandas`
-- `scikit-learn`
-- `matplotlib`
-- `openpyxl`
-- `python-docx`
+相关环境配置保留在：
+- `environment.yml`
+- `requirements.txt`
 
-## 快速开始 / Quick Start
-
-如果使用现有环境：
-
-```bash
-conda activate da
-python main.py
-```
-
-如果按环境文件新建：
+示例：
 
 ```bash
 conda env create -f environment.yml
@@ -77,61 +65,101 @@ conda activate nanling-biogain
 python main.py
 ```
 
-## 典型流程 / Typical Workflow
+### 分析流程
 
-1. 打开软件，加载南岭研究区相关栅格  
-   Open the app and load Nanling study-area rasters.
+1. 加载响应变量栅格与解释变量栅格  
+2. 检查对齐关系并完成必要重采样  
+3. 构建样本表  
+4. 训练随机森林模型  
+5. 进入“生物多样性增益评估”窗口运行 `+1` 情景  
+6. 查看报告、增益地图与预测结果  
 
-2. 确认响应变量至少有一个：`GPP` / `LAI` / `VOD`，并同时提供  
-   `tree_diversity` 和 `structure_diversity`  
-   Ensure at least one response raster is available and both biodiversity rasters are provided.
+### 数据说明
 
-3. 软件会检查栅格是否对齐；若未对齐，会按响应变量网格重采样  
-   The app checks alignment and resamples to the response grid when needed.
+仓库默认不包含本地数据、预处理结果与运行输出。  
+如需获取数据，请联系：
 
-4. 构建样本表并训练随机森林  
-   Build the sample table and train the random forest baseline.
+`luojsh7@mail2.sysu.edu.cn`
 
-5. 在“生物多样性增益评估”窗口中运行 `+1` 情景  
-   Run the `+1` scenario in the Biodiversity Gain Assessment window.
+---
 
-6. 查看报告、增益地图和预测结果  
-   Review the report, gain maps, and predictor results.
+## English
 
-## 当前基线 / Current Baseline
+### Overview
 
-- 模型 / Model: `RandomForestRegressor`
-- 响应变量 / Responses: `GPP`, `LAI`, `VOD`
-- 主要解释变量 / Main predictors:
-  - `tree_diversity`
-  - `structure_diversity`
-  - `MAT`
-  - `MAP`
-  - `VPD`
-  - `SM`
-  - `SSRD`
-  - `DEM`
-  - `slope`
-  - `aspect`
+`Nanling_Biogain` is a desktop application for biodiversity gain assessment in the Nanling region. Built with Python and PySide6, it supports pixel-level modeling, scenario analysis, and visualization of biodiversity effects on vegetation functions.
 
-## 数据与提交说明 / Data And Git Notes
+The system is designed to address the following questions:
+- How `GPP`, `LAI`, and `VOD` change when `tree_diversity` increases
+- How `GPP`, `LAI`, and `VOD` change when `structure_diversity` increases
+- Whether biodiversity variables retain independent contributions after controlling for climate and terrain
 
-首次代码提交默认**不包含本地数据与输出结果**：
-- `data/`
-- `outputs/`
+### Implemented Features
 
-也就是说，这个仓库优先提交：
-- 源代码
-- 文档
-- 环境配置
+The current release includes:
+- Manual raster loading and prepared mean-dataset loading
+- Grid alignment checks and response-grid-based resampling when required
+- Nanling-only preview with vector boundary overlay
+- Pixel-level sample-table construction
+- `RandomForestRegressor` baseline model training
+- Biodiversity `+1` gain assessment
+- Absolute-gain and percent-gain visualization
+- Chinese / English UI switching
 
-而不提交本地预处理栅格、模型结果和临时输出。
+### Technology Stack
 
-The initial code commit is intended to exclude local data and generated outputs. The repository should primarily track source code, docs, and environment configuration.
+- Python
+- PySide6
+- rasterio
+- numpy
+- pandas
+- scikit-learn
+- matplotlib
+- openpyxl
+- python-docx
 
-## 后续方向 / Next Steps
+### Repository Structure
 
-- 报告导出进一步规范化 / cleaner report export
-- 更丰富的增益图表达 / richer gain-map presentation
-- SHAP / PDP 等解释分析 / explainability workflows
-- Windows 打包发布 / Windows packaging and release
+- `main.py`: desktop application entry point
+- `ui/`: UI, interaction, translations, and background tasks
+- `core/`: raster processing, sample-table construction, modeling, and scenarios
+- `utils/`: constants, paths, exports, and shared helpers
+- `docs/`: scope, technical notes, and architecture documents
+
+### Running The Application
+
+Two usage modes are supported:
+
+1. Windows installer for end users  
+After installation, the application can be launched directly from the desktop or the Start menu without manual Python or Conda setup.
+
+2. Conda environment for development and research reproduction  
+For local development, debugging, or workflow reproduction, the project can also be run from a Conda environment.
+
+Environment configuration files are retained in:
+- `environment.yml`
+- `requirements.txt`
+
+Example:
+
+```bash
+conda env create -f environment.yml
+conda activate nanling-biogain
+python main.py
+```
+
+### Analysis Workflow
+
+1. Load response rasters and predictor rasters  
+2. Check alignment and complete required resampling  
+3. Build the sample table  
+4. Train the random forest model  
+5. Open the Biodiversity Gain Assessment window and run the `+1` scenario  
+6. Review reports, gain maps, and prediction results  
+
+### Data Access
+
+The repository does not include local datasets, prepared rasters, or runtime outputs by default.  
+For data access, please contact:
+
+`luojsh7@mail2.sysu.edu.cn`
