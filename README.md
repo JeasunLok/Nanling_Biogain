@@ -81,6 +81,10 @@ python main.py
 
 `luojsh7@mail2.sysu.edu.cn`
 
+### 许可
+
+本仓库源代码采用 `Apache License 2.0`。
+
 ---
 
 ## English
@@ -163,3 +167,7 @@ The repository does not include local datasets, prepared rasters, or runtime out
 For data access, please contact:
 
 `luojsh7@mail2.sysu.edu.cn`
+
+### License
+
+The source code in this repository is licensed under the `Apache License 2.0`.
