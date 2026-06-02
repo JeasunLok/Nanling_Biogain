@@ -96,6 +96,7 @@ class ScenarioWindow(QDialog):
         self._seed_predictor_inputs()
         self._response_selector.currentIndexChanged.connect(self._handle_response_changed)
         self._feature_selector.currentIndexChanged.connect(self._handle_feature_changed)
+        self._delta_spin.valueChanged.connect(self._handle_delta_changed)
         self._preview_selector.currentIndexChanged.connect(self._refresh_preview)
         self._run_button.clicked.connect(self._run_assessment)
         self._cancel_button.clicked.connect(self._cancel_task)
@@ -260,29 +261,13 @@ class ScenarioWindow(QDialog):
         trained = response_name in self._trained_models
         self._run_button.setEnabled(trained)
         self._predict_button.setEnabled(trained)
-        self._export_report_button.setEnabled(self._scenario_result_key() in self._scenario_results)
-        if trained:
-            result = self._model_results[response_name]
-            self._summary_box.setPlainText(
-                "{0}\nR2: {1:.4f}\nRMSE: {2:.4f}\nMAE: {3:.4f}".format(
-                    self._tr("response_label_line").format(
-                        self._tr("var_{0}".format(response_name))
-                    ),
-                    result.r2,
-                    result.rmse,
-                    result.mae,
-                )
-            )
-        else:
-            self._summary_box.setPlainText(self._tr("assessment_requires_training"))
-        self._prediction_result_label.clear()
-        self._populate_preview_selector()
-        self._refresh_preview()
+        self._refresh_current_selection_state()
 
     def _handle_feature_changed(self) -> None:
-        self._export_report_button.setEnabled(self._scenario_result_key() in self._scenario_results)
-        self._populate_preview_selector()
-        self._refresh_preview()
+        self._refresh_current_selection_state()
+
+    def _handle_delta_changed(self, _value: float) -> None:
+        self._refresh_current_selection_state()
 
     def _run_assessment(self) -> None:
         response_name = self._current_response()
@@ -343,8 +328,7 @@ class ScenarioWindow(QDialog):
             self._preview_selector.setCurrentIndex(percent_index)
         self._prediction_result_label.clear()
         self._progress_label.setText(self._tr("scenario_complete_title"))
-        self._export_report_button.setEnabled(True)
-        self._populate_preview_selector()
+        self._refresh_current_selection_state()
         self._on_log_message(
             "{0}: {1} | {2}={3:.4f} | {4}={5:.4f}%".format(
                 self._tr("scenario_exported"),
@@ -463,6 +447,31 @@ class ScenarioWindow(QDialog):
         fill_value = np.nan if nodata is None else nodata
         array = np.where(mask, array, fill_value).astype(np.float32)
         return array, transform, nodata
+
+    def _refresh_current_selection_state(self) -> None:
+        response_name = self._current_response()
+        trained = response_name in self._trained_models
+        scenario_result = self._scenario_results.get(self._scenario_result_key())
+        self._export_report_button.setEnabled(scenario_result is not None)
+        if scenario_result is not None:
+            self._summary_box.setPlainText(self._build_report_text(scenario_result))
+        elif trained:
+            result = self._model_results[response_name]
+            self._summary_box.setPlainText(
+                "{0}\nR2: {1:.4f}\nRMSE: {2:.4f}\nMAE: {3:.4f}".format(
+                    self._tr("response_label_line").format(
+                        self._tr("var_{0}".format(response_name))
+                    ),
+                    result.r2,
+                    result.rmse,
+                    result.mae,
+                )
+            )
+        else:
+            self._summary_box.setPlainText(self._tr("assessment_requires_training"))
+        self._prediction_result_label.clear()
+        self._populate_preview_selector()
+        self._refresh_preview()
 
     def _predict_gain_from_inputs(self) -> None:
         response_name = self._current_response()
@@ -699,15 +708,15 @@ class ScenarioWindow(QDialog):
     ) -> str:
         feature_label = self._feature_label_text(feature_name)
         response_label = self._tr("var_{0}".format(response_name))
-        delta_label = self._format_delta(delta)
+        delta_label = self._format_signed_delta(delta)
         if mode == "absolute":
-            return "{0} +{1} -> {2} | {3}".format(
+            return "{0} {1} -> {2} | {3}".format(
                 feature_label,
                 delta_label,
                 response_label,
                 self._tr("absolute_gain_preview"),
             )
-        return "{0} +{1} -> {2} | {3}".format(
+        return "{0} {1} -> {2} | {3}".format(
             feature_label,
             delta_label,
             response_label,
@@ -717,6 +726,11 @@ class ScenarioWindow(QDialog):
     def _format_delta(self, value: float) -> str:
         text = "{0:.4f}".format(float(value)).rstrip("0").rstrip(".")
         return text if text else "0"
+
+    def _format_signed_delta(self, value: float) -> str:
+        magnitude = self._format_delta(abs(float(value)))
+        sign = "+" if value >= 0 else "-"
+        return "{0}{1}".format(sign, magnitude)
 
     def _format_delta_change_text(self, value: float) -> str:
         magnitude = self._format_delta(abs(float(value)))
