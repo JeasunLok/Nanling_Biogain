@@ -19,7 +19,7 @@
 - 南岭区域裁剪预览与矢量边界叠加
 - 像元级样本表构建
 - `RandomForestRegressor` 基线模型训练
-- 生物多样性 `+1` 情景增益评估
+- 生物多样性情景增益评估
 - 绝对增益与百分比增益可视化
 - 中英文界面切换
 
@@ -106,7 +106,7 @@ The current release includes:
 - Nanling-only preview with vector boundary overlay
 - Pixel-level sample-table construction
 - `RandomForestRegressor` baseline model training
-- Biodiversity `+1` gain assessment
+- Biodiversity gain assessment
 - Absolute-gain and percent-gain visualization
 - Chinese / English UI switching
 
