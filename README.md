@@ -1,10 +1,10 @@
-# Nanling Biodiversity Vegetation Function Gain Assessment System
+# Assessment System for Biodiversity Impacts on Ecosystem Service Functions
 
 ## 中文
 
 ### 项目简介
 
-`Nanling_Biogain` 是一个面向南岭区域的生物多样性增益评估桌面软件。项目以 Python 和 PySide6 为基础，围绕生物多样性对植被功能的影响开展像元级建模、情景分析与结果展示。
+“生物多样性对生态系统服务功能影响评估系统”是一个面向区域生态分析的桌面软件。项目以 Python 和 PySide6 为基础，围绕生物多样性对生态系统服务功能的影响开展像元级建模、情景分析与结果展示。
 
 本系统关注以下核心问题：
 - 树种多样性 `tree_diversity` 增加时，`GPP`、`LAI`、`VOD` 的变化幅度
@@ -91,7 +91,7 @@ python main.py
 
 ### Overview
 
-`Nanling_Biogain` is a desktop application for biodiversity gain assessment in the Nanling region. Built with Python and PySide6, it supports pixel-level modeling, scenario analysis, and visualization of biodiversity effects on vegetation functions.
+The Assessment System for Biodiversity Impacts on Ecosystem Service Functions is a desktop application for regional ecological analysis. Built with Python and PySide6, it supports pixel-level modeling, scenario analysis, and visualization of biodiversity effects on ecosystem service functions.
 
 The system is designed to address the following questions:
 - How `GPP`, `LAI`, and `VOD` change when `tree_diversity` increases

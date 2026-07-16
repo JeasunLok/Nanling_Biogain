@@ -3,7 +3,7 @@ from __future__ import annotations
 
 TRANSLATIONS = {
     "en": {
-        "window_title": "Nanling Biodiversity Vegetation Function Gain Assessment System",
+        "window_title": "Assessment System for Biodiversity Impacts on Ecosystem Service Functions",
         "load_rasters": "Load Raster(s)",
         "validate_grid": "Validate Grid",
         "clear_session": "Clear Session",
@@ -127,7 +127,7 @@ TRANSLATIONS = {
         ),
     },
     "zh": {
-        "window_title": "南岭生物多样性植被功能增益评估系统",
+        "window_title": "生物多样性对生态系统服务功能影响评估系统",
         "load_rasters": "加载栅格",
         "validate_grid": "检验对齐",
         "clear_session": "清空窗口",

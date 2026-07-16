@@ -1,4 +1,4 @@
-#define MyAppName "NanlingBioGain"
+#define MyAppName "Assessment System for Biodiversity Impacts on Ecosystem Service Functions"
 #define MyAppVersion "1.0"
 #define MyAppPublisher "JeasunLok"
 #define MyAppURL "https://github.com/JeasunLok/Nanling_Biogain"
@@ -16,7 +16,7 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 VersionInfoCompany={#MyAppPublisher}
-VersionInfoDescription=Nanling biodiversity vegetation function gain assessment desktop application
+VersionInfoDescription=Desktop application for assessing biodiversity impacts on ecosystem service functions
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoCopyright=Copyright (c) {#MyAppPublisher}
